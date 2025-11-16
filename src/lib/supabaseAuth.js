@@ -326,9 +326,11 @@ export const getMockCompanies = () => {
 };
 
 export const getMockSuperAdmin = () => {
+  const email = import.meta.env.VITE_DEFAULT_SUPERADMIN_EMAIL || 'superadmin@camacero.com';
+  const password = import.meta.env.VITE_DEFAULT_SUPERADMIN_PASSWORD || 'superadmin123';
   return {
-    email: 'superadmin@camacero.com',
-    password: 'superadmin123',
+    email,
+    password,
     role: 'superadmin',
     permissions: ['all']
   };
