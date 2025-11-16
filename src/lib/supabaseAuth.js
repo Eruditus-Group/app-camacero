@@ -26,13 +26,11 @@ export const authenticateCompany = async (email, password) => {
       throw new Error('Credenciales inválidas');
     }
 
-    // Verificar contraseña (en producción usar bcrypt)
-    // Por ahora comparación directa para compatibilidad con datos mock
-    const isValidPassword = password === 'admin123' || 
-                           password === 'gerente123' || 
-                           password === 'usuario123' || 
-                           password === 'operador123';
-    
+    // Verificar contraseña contra password_hash usando bcrypt
+    const hasHash = !!company.password_hash;
+    const isValidPassword = hasHash
+      ? await bcrypt.compare(password, company.password_hash)
+      : false;
     if (!isValidPassword) {
       throw new Error('Credenciales inválidas');
     }

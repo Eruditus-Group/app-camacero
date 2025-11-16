@@ -119,6 +119,19 @@ INSERT INTO companies (email, password_hash, name, role, plan, status, permissio
 ('operador@sidenal.com', '$2b$10$example_hash_4', 'Sidenal', 'operator', 'Gratis', 'Activo', '["read"]'::jsonb)
 ON CONFLICT (email) DO NOTHING;
 
+-- Empresa demo real para portal
+INSERT INTO companies (email, password_hash, name, role, plan, status, permissions)
+VALUES (
+  'admin@camacero.test',
+  '$2b$10$8ky.bvvqPBElQSSt.Tf46.vCgpJ9v..iKPmvfk1vAs6ce0jBAVdye',
+  'Empresa Demo',
+  'admin',
+  'Premium',
+  'Activo',
+  '["read","write","delete","manage_users","view_analytics"]'::jsonb
+)
+ON CONFLICT (email) DO NOTHING;
+
 -- Insertar super administrador
 INSERT INTO super_admins (email, password_hash, name, role, permissions) VALUES
 ('superadmin@camacero.com', '$2b$10$example_superadmin_hash', 'Super Administrador', 'superadmin', '["all"]'::jsonb)
