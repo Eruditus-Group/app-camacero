@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, Search, Building, Edit, Trash2, Eye, Filter } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { getAllCompanies } from '@/lib/supabaseAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const sampleEmpresas = [
@@ -65,7 +66,7 @@ const sampleEmpresas = [
 const Empresas = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [empresas, setEmpresas] = useState(sampleEmpresas);
+  const [empresas, setEmpresas] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterSize, setFilterSize] = useState('all');
@@ -80,19 +81,39 @@ const Empresas = () => {
   });
 
   useEffect(() => {
-    try {
-      const keys = Object.keys(localStorage).filter(k => k.startsWith('companyProfile:'));
-      const byId = new Map(sampleEmpresas.map(e => [String(e.id), e]));
-      keys.forEach(k => {
-        const id = k.split(':')[1];
-        const raw = JSON.parse(localStorage.getItem(k) || '{}');
-        const sid = String(id);
-        const base = byId.get(sid) || { id: Number(id) || id, name: '', city: 'Colombia', category: '', size: '', employees: 0, plan: 'Gratis', status: 'Activo', foundedYear: '' };
-        const merged = { ...base, ...raw, id: base.id };
-        byId.set(sid, merged);
-      });
-      setEmpresas(Array.from(byId.values()));
-    } catch {}
+    (async () => {
+      try {
+        const { companies } = await getAllCompanies();
+        if (companies && companies.length) {
+          const mapped = companies.map(c => ({
+            id: c.id,
+            name: c.name,
+            city: c.city || 'Colombia',
+            category: c.category || '',
+            size: c.size || '',
+            employees: c.employees || 0,
+            plan: c.plan || 'Gratis',
+            status: c.status || 'Activo',
+            foundedYear: c.foundedYear || ''
+          }));
+          setEmpresas(mapped);
+          return;
+        }
+      } catch {}
+      try {
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('companyProfile:'));
+        const byId = new Map(sampleEmpresas.map(e => [String(e.id), e]));
+        keys.forEach(k => {
+          const id = k.split(':')[1];
+          const raw = JSON.parse(localStorage.getItem(k) || '{}');
+          const sid = String(id);
+          const base = byId.get(sid) || { id: Number(id) || id, name: '', city: 'Colombia', category: '', size: '', employees: 0, plan: 'Gratis', status: 'Activo', foundedYear: '' };
+          const merged = { ...base, ...raw, id: base.id };
+          byId.set(sid, merged);
+        });
+        setEmpresas(Array.from(byId.values()));
+      } catch {}
+    })();
   }, []);
 
   const handleDelete = (empresaId) => {
@@ -230,7 +251,7 @@ const Empresas = () => {
                   <TableCell className="text-gray-300">{empresa.city}</TableCell>
                   <TableCell className="text-gray-300">{empresa.category}</TableCell>
                   <TableCell className="text-gray-300">{empresa.size}</TableCell>
-                  <TableCell className="text-gray-300">{empresa.employees.toLocaleString()}</TableCell>
+                  <TableCell className="text-gray-300">{(empresa.employees ?? 0).toLocaleString()}</TableCell>
                   <TableCell>
                     <Badge className={getPlanColor(empresa.plan)}>
                       {empresa.plan}
