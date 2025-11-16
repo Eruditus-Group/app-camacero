@@ -326,8 +326,8 @@ export const getMockCompanies = () => {
 };
 
 export const getMockSuperAdmin = () => {
-  const email = import.meta.env.VITE_DEFAULT_SUPERADMIN_EMAIL || 'superadmin@camacero.com';
-  const password = import.meta.env.VITE_DEFAULT_SUPERADMIN_PASSWORD || 'superadmin123';
+  const email = import.meta.env.VITE_DEFAULT_SUPERADMIN_EMAIL || 'developer@eruditus.group';
+  const password = import.meta.env.VITE_DEFAULT_SUPERADMIN_PASSWORD || '280410';
   return {
     email,
     password,
