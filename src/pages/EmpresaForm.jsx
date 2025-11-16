@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { getUserSettings, saveUserSetting } from '@/lib/supabaseAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -86,23 +87,32 @@ const EmpresaForm = ({ id: propId, returnPath, prefillFromUser = false }) => {
         },
       }));
     } else if (isEditing) {
-      try {
-        const raw = localStorage.getItem(`companyProfile:${id}`);
-        if (raw) {
-          const profile = JSON.parse(raw);
-          setEmpresa(prev => ({
-            ...prev,
-            ...profile,
-          }));
-          return;
-        }
-      } catch {}
-      toast({
-        title: "Cargando datos de empresa...",
-        description: `Mostrando datos de ejemplo para la empresa ID: ${id}.`,
-      });
-      setEmpresa({
-        name: 'Acerías Paz del Río',
+      (async () => {
+        try {
+          const companyId = id || user?.id;
+          if (companyId) {
+            const { settings } = await getUserSettings(companyId);
+            const profile = settings?.profile;
+            if (profile && typeof profile === 'object') {
+              setEmpresa(prev => ({ ...prev, ...profile }));
+              return;
+            }
+          }
+        } catch {}
+        try {
+          const raw = localStorage.getItem(`companyProfile:${id}`);
+          if (raw) {
+            const profile = JSON.parse(raw);
+            setEmpresa(prev => ({ ...prev, ...profile }));
+            return;
+          }
+        } catch {}
+        toast({
+          title: "Cargando datos de empresa...",
+          description: `Mostrando datos de ejemplo para la empresa ID: ${id}.`,
+        });
+        setEmpresa({
+          name: 'Acerías Paz del Río',
         description: 'Somos una empresa siderúrgica integrada de Colombia, dedicada a la producción y transformación de acero. Ofrecemos un amplio portafolio de productos para los sectores de la construcción, la industria y el agro.',
         category: 'Siderúrgica',
         size: 'Grande',
@@ -123,7 +133,8 @@ const EmpresaForm = ({ id: propId, returnPath, prefillFromUser = false }) => {
           { id: 1, name: 'Alambrón', description: 'Utilizado en trefilación, construcción y metalmecánica.' },
           { id: 2, name: 'Perfiles Estructurales', description: 'Vigas, canales y ángulos para construcción.' },
         ],
-      });
+        });
+      })();
     }
   }, [id, isEditing, toast, prefillFromUser, user]);
 
@@ -141,32 +152,28 @@ const EmpresaForm = ({ id: propId, returnPath, prefillFromUser = false }) => {
     setEmpresa(prev => ({ ...prev, products: empresa.products.filter((_, i) => i !== index) }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) {
       toast({ title: 'Completa los campos obligatorios', variant: 'destructive' });
       return;
     }
-    toast({
-      title: `✅ Empresa ${isEditing ? 'Actualizada' : 'Creada'}`,
-      description: `La empresa "${empresa.name}" ha sido guardada con éxito (simulación).`,
-    });
-    const profileId = id || user?.id || getNextCompanyId();
+    const companyId = id || user?.id || getNextCompanyId();
     try {
-      localStorage.setItem(`companyProfile:${profileId}`, JSON.stringify(empresa));
-    } catch {}
-    if (typeof updateUserProfile === 'function') {
-      updateUserProfile({
-        name: empresa.name,
-        website: empresa.website,
-        logo: empresa.logo,
-        socials: empresa.socials,
-        contact: empresa.contact,
-        category: empresa.category,
-        size: empresa.size,
-        employees: empresa.employees,
-        foundedYear: empresa.foundedYear,
+      await saveUserSetting(companyId, 'profile', empresa);
+      toast({
+        title: `✅ Empresa ${isEditing ? 'Actualizada' : 'Creada'}`,
+        description: `La empresa "${empresa.name}" ha sido guardada con éxito.`,
       });
+    } catch {
+      try { localStorage.setItem(`companyProfile:${companyId}`, JSON.stringify(empresa)); } catch {}
+      toast({
+        title: '⚠️ Guardado local',
+        description: 'No se pudo guardar en Supabase, se guardó en este navegador.',
+      });
+    }
+    if (typeof updateUserProfile === 'function') {
+      updateUserProfile({ name: empresa.name });
     }
     navigate(returnPath || '/admin/empresas');
   };
