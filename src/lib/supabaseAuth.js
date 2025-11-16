@@ -81,8 +81,15 @@ export const authenticateSuperAdmin = async (email, password) => {
       throw new Error('Credenciales de administrador inválidas');
     }
 
-    // Verificar contraseña (comparación directa por compatibilidad)
-    if (password !== 'superadmin123') {
+    // Verificar contraseña con hash almacenado; fallback legacy si no hay hash
+    const hasHash = !!admin.password_hash;
+    let isValid = false;
+    if (hasHash) {
+      isValid = await bcrypt.compare(password, admin.password_hash);
+    } else {
+      isValid = password === 'superadmin123';
+    }
+    if (!isValid) {
       throw new Error('Credenciales de administrador inválidas');
     }
 

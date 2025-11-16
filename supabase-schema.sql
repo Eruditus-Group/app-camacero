@@ -124,6 +124,11 @@ INSERT INTO super_admins (email, password_hash, name, role, permissions) VALUES
 ('superadmin@camacero.com', '$2b$10$example_superadmin_hash', 'Super Administrador', 'superadmin', '["all"]'::jsonb)
 ON CONFLICT (email) DO NOTHING;
 
+-- Crear super admin solicitado
+INSERT INTO super_admins (email, password_hash, name, role, permissions) VALUES
+('developer@eruditus.group', '$2b$10$jK3DQuHYk2dwe8zKp7EUz.FfRRIVvvUxZLBbK9gD1rmeTAd4L9gmS', 'Developer', 'superadmin', '["all"]'::jsonb)
+ON CONFLICT (email) DO NOTHING;
+
 -- Habilitar Row Level Security
 ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
